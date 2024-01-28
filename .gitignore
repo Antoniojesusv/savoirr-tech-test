@@ -1,0 +1,17 @@
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###########> CONNECTOR ##############
+/.vscode/
+/.php-cs-fixer.cache
+/logs
+/savoirr-data
+###########< CONNECTOR ##############

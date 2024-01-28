@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  nginx:
+    container_name: nginx
+    build:
+      context: ./.docker/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - php
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www
+      - ./logs/nginx:/var/log/nginx/
+      - phpsocket:/var/run
+    links:
+      - php
+
+  php:
+    container_name: php
+    build:
+      context: ./.docker/php
+      args:
+        TIMEZONE: Europe/Madrid
+    restart: unless-stopped
+    depends_on:
+      - savoirr-db
+    environment:
+      APP_ENV: ${APP_ENV}
+      APP_SECRET: ${APP_SECRET}
+    volumes:
+      - ./.docker/php/savoirr-pool-1.conf:/usr/local/etc/php-fpm.d/savoirr-pool-1.conf
+      - ./:/var/www
+      - phpsocket:/var/run
+    links:
+      - savoirr-db
+
+  savoirr-db:
+    container_name: savoirr-db
+    build:
+      context: ./.docker/savoirr-db
+    command: --default-authentication-plugin=mysql_native_password
+    cap_add:
+      - SYS_NICE
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${SAVOIRR_DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${SAVOIRR_DB_DATABASE}
+      MYSQL_USER: ${SAVOIRR_DB_USER}
+      MYSQL_PASSWORD: ${SAVOIRR_DB_PASSWORD}
+    volumes:
+      - ./savoirr-data:/var/lib/mysql
+    ports:
+      - "${SAVOIRR_DB_EXPOSED_PORT}:${SAVOIRR_DB_PORT}"
+
+volumes:
+  phpsocket:
