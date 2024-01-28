@@ -3,12 +3,14 @@
 namespace App\Command;
 
 use App\Mep\Application\Import\ImportMepCommand;
+use App\Message\ImportMepMessage;
 use App\Shared\Infrastructure\Bus\Command\CommandBus;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 #[AsCommand(
     name: 'app:import-members',
@@ -18,14 +20,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class ImportMepsCommand extends Command
 {
-    private CommandBus $commandBus;
+    // private CommandBus $commandBus;
+
+    private MessageBusInterface $bus;
+
     protected static $defaultDescription = 'Import members of the european parliament.';
 
-    const MEPS_URL = "https://www.europarl.europa.eu/meps/en/full-list/xml/a";
+    const MEPS_URL = "https://www.europarl.europa.eu/meps/en/full-list/xml/";
 
-    public function __construct(CommandBus $commandBus)
+    public function __construct(MessageBusInterface $bus)
     {
-        $this->commandBus = $commandBus;
+        $this->bus = $bus;
+        // $this->commandBus = $commandBus;
 
         // you must call the parent constructor
         parent::__construct();
@@ -36,7 +42,7 @@ class ImportMepsCommand extends Command
         $mepsGenerator = $this->getMepsFromXml();
 
         foreach ($mepsGenerator as $mep) {
-            $command = new ImportMepCommand(
+            $message = new ImportMepMessage(
                 $mep['id'],
                 $mep['fullName'],
                 $mep['country'],
@@ -44,7 +50,7 @@ class ImportMepsCommand extends Command
                 $mep['nationalPoliticalGroup'],
             );
 
-            $this->commandBus->dispatch($command);
+            $this->bus->dispatch($message);
         }
 
         $output->writeln("Successfully meps imported. \xF0\x9F\x98\x8A");
